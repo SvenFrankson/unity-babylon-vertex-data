@@ -25,6 +25,8 @@ public class MeshToVertexData : MonoBehaviour {
         List<int> verticesAsArray = new List<int>();
         foreach (Vector3 vertex in mesh.vertices)
         {
+            // Vertices are stored as int with a factor 100, reducing the JSON file size (no decimals).
+            // As a consequence, Mesh is a 100 times bigger once deserialized.
             verticesAsArray.Add(Mathf.RoundToInt(vertex.x * 100));
             verticesAsArray.Add(Mathf.RoundToInt(vertex.y * 100));
             verticesAsArray.Add(Mathf.RoundToInt(vertex.z * 100));
