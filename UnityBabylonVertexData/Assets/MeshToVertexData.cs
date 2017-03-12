@@ -53,4 +53,29 @@ public class MeshToVertexData : MonoBehaviour {
 
         return data;
     }
+
+    public static BoneData[] GetBonesData(Transform rootBone)
+    {
+        List<BoneData> bonesData = new List<BoneData>();
+
+        BoneData rootData = new BoneData();
+        rootData.name = rootBone.name;
+        rootData.parentName = "_null";
+        rootData.matrix = Matrix4x4.TRS(rootBone.localPosition, rootBone.localRotation, rootBone.localScale);
+
+        bonesData.Add(rootData);
+
+        foreach (Transform child in rootBone.GetComponentsInChildren<Transform>())
+        {
+            BoneData childData = new BoneData();
+
+            childData.name = rootBone.name;
+            childData.parentName = child.parent.name;
+            childData.matrix = Matrix4x4.TRS(child.localPosition, child.localRotation, child.localScale);
+
+            bonesData.Add(rootData);
+        }
+
+        return bonesData.ToArray();
+    }
 }
