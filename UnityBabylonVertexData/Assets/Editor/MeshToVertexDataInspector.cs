@@ -22,9 +22,13 @@ public class MeshToVertexDataInspector : Editor {
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
-        if (GUILayout.Button("VertexData"))
+        if (GUILayout.Button("Target VertexData"))
         {
             Target.TargetToJSON();
+        }
+        if (GUILayout.Button("GameObject Data"))
+        {
+            Target.GameObjectToJSON();
         }
     }
 }

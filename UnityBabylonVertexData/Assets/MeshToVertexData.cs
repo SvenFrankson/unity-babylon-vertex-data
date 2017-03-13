@@ -7,6 +7,30 @@ public class MeshToVertexData : MonoBehaviour {
 
     public Mesh Target;
 
+    public void GameObjectToJSON()
+    {
+        SkinnedMeshRenderer skinnedMeshRenderer = this.GetComponent<SkinnedMeshRenderer>();
+        Mesh mesh = skinnedMeshRenderer.sharedMesh;
+
+        FileStream meshOutput = new FileStream(Application.dataPath + "\\mesh.json", FileMode.Create, FileAccess.Write);
+        StreamWriter meshDataStream = new StreamWriter(meshOutput);
+
+        meshDataStream.Write(JsonUtility.ToJson(MeshToVertexData.GetVertexData(mesh)));
+
+        meshDataStream.Close();
+        meshOutput.Close();
+
+        Transform rootBone = skinnedMeshRenderer.rootBone;
+
+        FileStream bonesOutput = new FileStream(Application.dataPath + "\\bones.json", FileMode.Create, FileAccess.Write);
+        StreamWriter bonesDataStream = new StreamWriter(bonesOutput);
+
+        bonesDataStream.Write(JsonUtility.ToJson(MeshToVertexData.GetBonesData(rootBone)));
+
+        bonesDataStream.Close();
+        bonesOutput.Close();
+    }
+
     public void TargetToJSON()
     {
         FileStream output = new FileStream(Application.dataPath + "\\out.json", FileMode.Create, FileAccess.Write);
@@ -54,28 +78,34 @@ public class MeshToVertexData : MonoBehaviour {
         return data;
     }
 
-    public static BoneData[] GetBonesData(Transform rootBone)
+	public static SkeletonData GetBonesData(Transform rootBone)
     {
         List<BoneData> bonesData = new List<BoneData>();
 
         BoneData rootData = new BoneData();
         rootData.name = rootBone.name;
-        rootData.parentName = "_null";
-        rootData.matrix = Matrix4x4.TRS(rootBone.localPosition, rootBone.localRotation, rootBone.localScale);
+		rootData.parentName = "_null";
+		rootData.matrix = Matrix4x4.TRS (rootBone.localPosition, rootBone.localRotation, rootBone.localScale);
 
         bonesData.Add(rootData);
 
         foreach (Transform child in rootBone.GetComponentsInChildren<Transform>())
         {
-            BoneData childData = new BoneData();
+			if (child != rootBone) {
+				BoneData childData = new BoneData();
 
-            childData.name = rootBone.name;
-            childData.parentName = child.parent.name;
-            childData.matrix = Matrix4x4.TRS(child.localPosition, child.localRotation, child.localScale);
+				childData.name = child.name;
+				childData.parentName = child.parent.name;
+				childData.matrix = Matrix4x4.TRS (child.localPosition, child.localRotation, child.localScale);
 
-            bonesData.Add(rootData);
+				bonesData.Add(childData);
+			}
         }
+        Debug.Log("Bones Length = " + bonesData.Count);
 
-        return bonesData.ToArray();
+        SkeletonData skeletonData = new SkeletonData();
+		skeletonData.skeleton = new List<BoneData>(bonesData);
+
+		return skeletonData;
     }
 }
