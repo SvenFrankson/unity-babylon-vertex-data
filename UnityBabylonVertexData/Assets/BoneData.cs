@@ -8,7 +8,7 @@ public struct BoneData
 {
     public string name;
     public string parentName;
-	public Matrix4x4 matrix;
+	public float[] matrix;
 }
 
 public struct SkeletonData

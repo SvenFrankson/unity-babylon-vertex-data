@@ -25,10 +25,12 @@ public class MeshToVertexData : MonoBehaviour {
         FileStream bonesOutput = new FileStream(Application.dataPath + "\\bones.json", FileMode.Create, FileAccess.Write);
         StreamWriter bonesDataStream = new StreamWriter(bonesOutput);
 
-        bonesDataStream.Write(JsonUtility.ToJson(MeshToVertexData.GetBonesData(rootBone)));
+		bonesDataStream.Write(JsonUtility.ToJson(MeshToVertexData.GetBonesData(skinnedMeshRenderer)));
 
         bonesDataStream.Close();
         bonesOutput.Close();
+
+
     }
 
     public void TargetToJSON()
@@ -46,24 +48,24 @@ public class MeshToVertexData : MonoBehaviour {
     {
         VertexData data = new VertexData();
 
-        List<int> verticesAsArray = new List<int>();
+		List<float> verticesAsArray = new List<float>();
         foreach (Vector3 vertex in mesh.vertices)
         {
             // Vertices are stored as int with a factor 100, reducing the JSON file size (no decimals).
             // As a consequence, Mesh is a 100 times bigger once deserialized.
-            verticesAsArray.Add(Mathf.RoundToInt(vertex.x * 100));
-            verticesAsArray.Add(Mathf.RoundToInt(vertex.y * 100));
-            verticesAsArray.Add(Mathf.RoundToInt(vertex.z * 100));
+            verticesAsArray.Add(vertex.x * 100);
+            verticesAsArray.Add(vertex.y * 100);
+            verticesAsArray.Add(vertex.z * 100);
         }
         data.positions = verticesAsArray.ToArray();
         Debug.Log("Positions Length = " + data.positions.Length);
 
-        List<int> normalsAsArray = new List<int>();
+		List<float> normalsAsArray = new List<float>();
         foreach (Vector3 normal in mesh.normals)
         {
-            normalsAsArray.Add(Mathf.RoundToInt(normal.x * 100));
-            normalsAsArray.Add(Mathf.RoundToInt(normal.y * 100));
-            normalsAsArray.Add(Mathf.RoundToInt(normal.z * 100));
+            normalsAsArray.Add(normal.x * 100);
+            normalsAsArray.Add(normal.y * 100);
+            normalsAsArray.Add(normal.z * 100);
         }
         data.normals = normalsAsArray.ToArray();
         Debug.Log("Normals Length = " + data.normals.Length);
@@ -75,31 +77,40 @@ public class MeshToVertexData : MonoBehaviour {
         }
         Debug.Log("Indices Length = " + data.indices.Length);
 
+		data.matricesIndices = new int[mesh.vertices.Length * 4];
+		data.matricesWeights = new float[mesh.vertices.Length * 4];
+		for (int i = 0; i < mesh.boneWeights.Length; i++)
+		{
+			data.matricesIndices [4 * i] = mesh.boneWeights [i].boneIndex0;
+			data.matricesWeights [4 * i] = mesh.boneWeights [i].weight0;
+			data.matricesIndices [4 * i + 1] = mesh.boneWeights [i].boneIndex1;
+			data.matricesWeights [4 * i + 1] = mesh.boneWeights [i].weight1;
+			data.matricesIndices [4 * i + 2] = mesh.boneWeights [i].boneIndex2;
+			data.matricesWeights [4 * i + 2] = mesh.boneWeights [i].weight2;
+			data.matricesIndices [4 * i + 3] = mesh.boneWeights [i].boneIndex3;
+			data.matricesWeights [4 * i + 3] = mesh.boneWeights [i].weight3;
+		}
+
         return data;
     }
 
-	public static SkeletonData GetBonesData(Transform rootBone)
+	public static SkeletonData GetBonesData(SkinnedMeshRenderer skinnedMeshRenderer)
     {
         List<BoneData> bonesData = new List<BoneData>();
 
-        BoneData rootData = new BoneData();
-        rootData.name = rootBone.name;
-		rootData.parentName = "_null";
-		rootData.matrix = Matrix4x4.TRS (rootBone.localPosition, rootBone.localRotation, rootBone.localScale);
-
-        bonesData.Add(rootData);
-
-        foreach (Transform child in rootBone.GetComponentsInChildren<Transform>())
+        foreach (Transform bone in skinnedMeshRenderer.bones)
         {
-			if (child != rootBone) {
-				BoneData childData = new BoneData();
+			BoneData childData = new BoneData();
 
-				childData.name = child.name;
-				childData.parentName = child.parent.name;
-				childData.matrix = Matrix4x4.TRS (child.localPosition, child.localRotation, child.localScale);
+			childData.name = bone.name;
+			childData.parentName = bone.parent.name;
+			childData.matrix = Matrix4x4ToFloatArray(Matrix4x4.TRS (bone.localPosition, bone.localRotation, bone.localScale));
 
-				bonesData.Add(childData);
+			if (bone == skinnedMeshRenderer.rootBone) {
+				childData.parentName = "__root";
 			}
+ 
+			bonesData.Add(childData);
         }
         Debug.Log("Bones Length = " + bonesData.Count);
 
@@ -108,4 +119,26 @@ public class MeshToVertexData : MonoBehaviour {
 
 		return skeletonData;
     }
+
+	public static float[] Matrix4x4ToFloatArray(Matrix4x4 matrix) {
+		float[] floatArray = new float[16];
+		floatArray [0] = matrix.m00;
+		floatArray [1] = matrix.m01;
+		floatArray [2] = matrix.m02;
+		floatArray [3] = matrix.m03;
+		floatArray [4] = matrix.m10;
+		floatArray [5] = matrix.m11;
+		floatArray [6] = matrix.m12;
+		floatArray [7] = matrix.m13;
+		floatArray [8] = matrix.m20;
+		floatArray [9] = matrix.m21;
+		floatArray [10] = matrix.m22;
+		floatArray [11] = matrix.m23;
+		floatArray [12] = matrix.m30;
+		floatArray [13] = matrix.m31;
+		floatArray [14] = matrix.m32;
+		floatArray [15] = matrix.m33;
+
+		return floatArray;
+	}
 }
